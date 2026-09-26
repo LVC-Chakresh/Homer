@@ -13,6 +13,7 @@ export const DEFAULT_PROXY_URL = "https://homer-3rx8.onrender.com";
 
 
 export type AdShieldMode = "hide" | "highlight";
+export type FindBarFontSize = "default" | "medium" | "large";
 
 export interface Settings {
   /** Master switch. Off means the content script does nothing at all. */
@@ -41,8 +42,12 @@ export interface Settings {
     takeOverCtrlF: boolean;
     /** Milliseconds to wait after the last keystroke before asking. Enter skips the wait. */
     debounceMs: number;
+    /** Size scale for the find bar text and controls. */
+    fontSize: FindBarFontSize;
   };
   proxyUrl: string;
+  /** Shared secret for a deployed proxy. Empty means the proxy is open (loopback-only). */
+  proxyToken: string;
   /**
    * Hostnames whose content is never sent to the proxy. Substring match, so `bank`
    * covers `mybank.com`. Feature 1 still works locally on heuristics alone.
@@ -64,8 +69,10 @@ export const DEFAULT_SETTINGS: Settings = {
     enabled: true,
     takeOverCtrlF: true,
     debounceMs: 300,
+    fontSize: "medium",
   },
   proxyUrl: DEFAULT_PROXY_URL,
+  proxyToken: "",
   neverSendHosts: [],
   nativeFindHosts: ["docs.google.com", "notion.so", "vscode.dev", "github.dev"],
 };
@@ -79,6 +86,7 @@ export function mergeSettings(stored: unknown): Settings {
   if (typeof src.proxyUrl === "string" && src.proxyUrl.trim() !== "") {
     base.proxyUrl = src.proxyUrl.trim().replace(/\/+$/, "");
   }
+  if (typeof src.proxyToken === "string") base.proxyToken = src.proxyToken.trim();
   if (Array.isArray(src.neverSendHosts)) base.neverSendHosts = src.neverSendHosts.map(String);
   if (Array.isArray(src.nativeFindHosts)) base.nativeFindHosts = src.nativeFindHosts.map(String);
 
@@ -105,6 +113,9 @@ export function mergeSettings(stored: unknown): Settings {
     }
     if (typeof find.debounceMs === "number" && Number.isFinite(find.debounceMs)) {
       base.semanticFind.debounceMs = Math.min(2000, Math.max(0, find.debounceMs));
+    }
+    if (find.fontSize === "default" || find.fontSize === "medium" || find.fontSize === "large") {
+      base.semanticFind.fontSize = find.fontSize;
     }
   }
   return base;

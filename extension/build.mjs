@@ -49,6 +49,14 @@ async function copyStatics() {
     const target = join(iconsDir, `icon-${size}.png`);
     if (!existsSync(target)) generateIcon(target, size);
   }
+
+  // Official Vercel Geist font assets
+  const fontsDist = join(outdir, "fonts");
+  if (!existsSync(fontsDist)) mkdirSync(fontsDist, { recursive: true });
+  const geistPkgFonts = join(here, "node_modules/geist/dist/fonts");
+  if (existsSync(geistPkgFonts)) {
+    cpSync(geistPkgFonts, fontsDist, { recursive: true });
+  }
 }
 
 async function bundleAll() {

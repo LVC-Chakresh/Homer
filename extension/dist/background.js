@@ -1,7 +1,7 @@
-// extension/shared/wire.ts
+// shared/wire.ts
 var AD_CATEGORIES = ["overlay", "sponsored", "adslot"];
 
-// extension/shared/settings.ts
+// shared/settings.ts
 var DEFAULT_PROXY_URL = "https://homer-3rx8.onrender.com";
 var DEFAULT_SETTINGS = {
   enabled: true,
@@ -14,9 +14,11 @@ var DEFAULT_SETTINGS = {
   semanticFind: {
     enabled: true,
     takeOverCtrlF: true,
-    debounceMs: 300
+    debounceMs: 300,
+    fontSize: "medium"
   },
   proxyUrl: DEFAULT_PROXY_URL,
+  proxyToken: "",
   neverSendHosts: [],
   nativeFindHosts: ["docs.google.com", "notion.so", "vscode.dev", "github.dev"]
 };
@@ -28,6 +30,7 @@ function mergeSettings(stored) {
   if (typeof src.proxyUrl === "string" && src.proxyUrl.trim() !== "") {
     base.proxyUrl = src.proxyUrl.trim().replace(/\/+$/, "");
   }
+  if (typeof src.proxyToken === "string") base.proxyToken = src.proxyToken.trim();
   if (Array.isArray(src.neverSendHosts)) base.neverSendHosts = src.neverSendHosts.map(String);
   if (Array.isArray(src.nativeFindHosts)) base.nativeFindHosts = src.nativeFindHosts.map(String);
   const ads = src.adBlocking;
@@ -53,26 +56,33 @@ function mergeSettings(stored) {
     if (typeof find.debounceMs === "number" && Number.isFinite(find.debounceMs)) {
       base.semanticFind.debounceMs = Math.min(2e3, Math.max(0, find.debounceMs));
     }
+    if (find.fontSize === "default" || find.fontSize === "medium" || find.fontSize === "large") {
+      base.semanticFind.fontSize = find.fontSize;
+    }
   }
   return base;
 }
 
-// extension/src/background.ts
-async function proxyBase() {
+// src/background.ts
+async function proxySettings() {
   const stored = await chrome.storage.local.get("jev:settings");
-  return mergeSettings(stored["jev:settings"]).proxyUrl;
+  const settings = mergeSettings(stored["jev:settings"]);
+  return { proxyUrl: settings.proxyUrl, proxyToken: settings.proxyToken };
 }
-async function postJson(url, body) {
+async function postJson(url, body, token) {
   let response;
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: token === "" ? { "content-type": "application/json" } : {
+        "content-type": "application/json",
+        "x-homer-token": token
+      },
       body: JSON.stringify(body)
     });
   } catch (cause) {
     throw new Error(
-      "could not reach the Jev proxy. Start it with `npm run dev` and check the proxy URL in the popup.",
+      "could not reach the Homer proxy. Start it with `npm run dev` and check the proxy URL in the popup.",
       { cause }
     );
   }
@@ -97,10 +107,10 @@ chrome.runtime.onMessage.addListener(
         if (count > 0) {
           chrome.action.setBadgeText({ tabId, text: String(count) });
           chrome.action.setBadgeBackgroundColor({ tabId, color: "#f43f5e" });
-          chrome.action.setTitle({ tabId, title: `Jev Copilot: ${count} ad(s) detected` });
+          chrome.action.setTitle({ tabId, title: `Homer: ${count} ad(s) detected` });
         } else {
           chrome.action.setBadgeText({ tabId, text: "" });
-          chrome.action.setTitle({ tabId, title: "Jev Copilot" });
+          chrome.action.setTitle({ tabId, title: "Homer" });
         }
       }
       sendResponse({ ok: true });
@@ -112,9 +122,11 @@ chrome.runtime.onMessage.addListener(
     const request = typed.request;
     void (async () => {
       try {
+        const { proxyUrl, proxyToken } = await proxySettings();
         const payload = await postJson(
-          `${await proxyBase()}${path}`,
-          request
+          `${proxyUrl}${path}`,
+          request,
+          proxyToken
         );
         const tabId = sender.tab?.id;
         if (typeof tabId === "number" && Array.isArray(payload.verdicts)) {
@@ -124,7 +136,7 @@ chrome.runtime.onMessage.addListener(
           if (ads > 0) {
             chrome.action.setBadgeText({ tabId, text: String(ads) });
             chrome.action.setBadgeBackgroundColor({ tabId, color: "#f43f5e" });
-            chrome.action.setTitle({ tabId, title: `Jev Copilot: ${ads} ad(s) detected` });
+            chrome.action.setTitle({ tabId, title: `Homer: ${ads} ad(s) detected` });
           }
         }
         sendResponse({ ok: true, payload });

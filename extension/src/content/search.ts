@@ -14,6 +14,7 @@ import type { ExtractedBlock } from "../dom.ts";
 import { Highlighter } from "./highlight.ts";
 import { describeVerdict, mountFindBar } from "./findbar.ts";
 import type { FindBarIntent } from "./findbar.ts";
+import type { FindBarFontSize } from "../../shared/settings.ts";
 import { searchViaWorker } from "../worker-client.ts";
 
 /** Eligible blocks are gathered at most this often while the user types. */
@@ -125,6 +126,7 @@ export class SemanticFinder {
   #lastSearchedQuery: string | null = null;
   readonly #document: Document;
   readonly #debounceMs: number;
+  #fontSize: FindBarFontSize;
   /** Called with every search's usage so the tab can account for the session. */
   readonly onUsage: (usage: UsageTotals) => void;
   /** Called with the query each search actually answers, for the popup's record. */
@@ -136,12 +138,19 @@ export class SemanticFinder {
     callbacks: {
       readonly onUsage?: (usage: UsageTotals) => void;
       readonly onQuery?: (query: string) => void;
+      readonly fontSize?: FindBarFontSize;
     } = {},
   ) {
     this.#document = document;
     this.#debounceMs = Math.max(0, Math.min(2000, debounceMs));
+    this.#fontSize = callbacks.fontSize ?? "medium";
     this.onUsage = callbacks.onUsage ?? (() => undefined);
     this.onQuery = callbacks.onQuery ?? (() => undefined);
+  }
+
+  setFontSize(size: FindBarFontSize): void {
+    this.#fontSize = size;
+    this.#bar?.setSize(size);
   }
 
   get isOpen(): boolean {
@@ -155,7 +164,11 @@ export class SemanticFinder {
     this.#blocks = [];
     this.#lastExtraction = 0;
 
-    this.#bar = mountFindBar(this.#document, { onIntent: (intent) => this.#onIntent(intent) });
+    this.#bar = mountFindBar(
+      this.#document,
+      { onIntent: (intent) => this.#onIntent(intent) },
+      this.#fontSize,
+    );
     if (preset !== "") this.#bar.preset(preset);
     this.#bar.focus();
     this.#bar.setCounts({ answer: 0, context: 0, current: 0 });
@@ -208,7 +221,7 @@ export class SemanticFinder {
   #schedule(text: string): void {
     if (this.#debounceTimer !== null) clearTimeout(this.#debounceTimer);
     if (text.trim() === "") {
-      this.#clearResults("Semantic find · powered by Jev");
+      this.#clearResults("Semantic find · powered by Homer");
       return;
     }
     // Enter skips the wait entirely; the keydown path calls `#searchNow` directly when the
@@ -227,7 +240,7 @@ export class SemanticFinder {
     }
     const trimmed = query.trim();
     if (trimmed === "") {
-      this.#clearResults("Semantic find · powered by Jev");
+      this.#clearResults("Semantic find · powered by Homer");
       return;
     }
     // Enter on an unchanged query walks the existing matches instead of spending a call.
@@ -245,7 +258,7 @@ export class SemanticFinder {
 
     const trimmed = query.trim();
     if (trimmed === "") {
-      this.#clearResults("Semantic find · powered by Jev");
+      this.#clearResults("Semantic find · powered by Homer");
       return;
     }
 
@@ -265,7 +278,7 @@ export class SemanticFinder {
     this.#clearPaint();
     const generation = (this.#generation += 1);
     bar.setSearching(true);
-    bar.setStatus({ text: "Asking Jev…", tone: "info" });
+    bar.setStatus({ text: "Asking Homer…", tone: "info" });
 
     let response;
     try {

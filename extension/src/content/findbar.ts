@@ -13,6 +13,7 @@
  */
 
 import type { SearchVerdict } from "../../shared/wire.ts";
+import type { FindBarFontSize } from "../../shared/settings.ts";
 
 export type FindBarIntent =
   | { readonly kind: "query"; readonly text: string }
@@ -43,27 +44,75 @@ const BAR_STYLES = `
     top: 20px;
     right: 24px;
     z-index: 2147483647;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
+    font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
     color: #09090b;
     user-select: none;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Base / default size scale */
+    --jev-bar-height: 44px;
+    --jev-bar-min-w: 480px;
+    --jev-bar-pad-x: 14px;
+    --jev-input-size: 14.5px;
+    --jev-brand-size: 13.5px;
+    --jev-brand-icon: 22px;
+    --jev-count-size: 12px;
+    --jev-btn-size: 28px;
+    --jev-btn-icon: 13px;
+    --jev-status-size: 12px;
+    --jev-status-max-w: 220px;
   }
+
+  /* Medium scale: comfortable reading size */
+  :host([data-size="medium"]) {
+    --jev-bar-height: 48px;
+    --jev-bar-min-w: 520px;
+    --jev-bar-pad-x: 16px;
+    --jev-input-size: 15.5px;
+    --jev-brand-size: 14.5px;
+    --jev-brand-icon: 24px;
+    --jev-count-size: 12.5px;
+    --jev-btn-size: 30px;
+    --jev-btn-icon: 14px;
+    --jev-status-size: 12.5px;
+    --jev-status-max-w: 240px;
+  }
+
+  /* Large scale: highly legible display */
+  :host([data-size="large"]) {
+    --jev-bar-height: 52px;
+    --jev-bar-min-w: 580px;
+    --jev-bar-pad-x: 18px;
+    --jev-input-size: 17px;
+    --jev-brand-size: 15.5px;
+    --jev-brand-icon: 26px;
+    --jev-count-size: 13.5px;
+    --jev-btn-size: 32px;
+    --jev-btn-icon: 15px;
+    --jev-status-size: 13.5px;
+    --jev-status-max-w: 280px;
+  }
+
   .jev-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: #ffffff;
     border: 1px solid #e4e4e7;
-    border-radius: 12px;
-    padding: 0 8px 0 14px;
-    box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
-    min-width: 440px;
-    max-width: 680px;
-    height: 44px;
+    border-radius: 9999px;
+    padding: 0 10px 0 var(--jev-bar-pad-x);
+    box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.04);
+    min-width: var(--jev-bar-min-w);
+    max-width: 780px;
+    height: var(--jev-bar-height);
     box-sizing: border-box;
-    animation: jev-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: jev-slide-down 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, height 0.15s ease;
+  }
+  .jev-bar:focus-within {
+    border-color: #18181b;
+    box-shadow: 0 8px 30px -2px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   @keyframes jev-slide-down {
     from { opacity: 0; transform: translateY(-8px) scale(0.98); }
@@ -72,47 +121,60 @@ const BAR_STYLES = `
   .jev-brand {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 7px;
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: var(--jev-brand-size);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     color: #09090b;
-    padding-right: 8px;
+    padding-right: 10px;
     border-right: 1px solid #e4e4e7;
     flex-shrink: 0;
+    line-height: 1;
   }
   .jev-icon {
     display: inline-flex;
     align-items: center;
-    color: #09090b;
+    justify-content: center;
+    width: var(--jev-brand-icon);
+    height: var(--jev-brand-icon);
+    border-radius: 6px;
+    background: #09090b;
+    color: #ffffff;
+  }
+  .jev-icon svg {
+    width: calc(var(--jev-brand-icon) * 0.58);
+    height: calc(var(--jev-brand-icon) * 0.58);
   }
   .jev-input {
     flex: 1;
-    min-width: 150px;
+    min-width: 170px;
     height: 100%;
     border: none;
     border-radius: 0;
     padding: 0 4px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--jev-input-size);
     background: transparent;
     color: #09090b;
     outline: none;
+    letter-spacing: -0.01em;
   }
   .jev-input::placeholder {
     color: #a1a1aa;
   }
   .jev-count {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 11px;
+    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--jev-count-size);
     font-weight: 500;
     color: #52525b;
     white-space: nowrap;
-    padding: 2px 8px;
+    padding: 3px 9px;
     background: #f4f4f5;
     border: 1px solid #e4e4e7;
-    border-radius: 6px;
+    border-radius: 9999px;
     flex-shrink: 0;
+    letter-spacing: -0.01em;
   }
   .jev-count:empty {
     display: none;
@@ -126,22 +188,26 @@ const BAR_STYLES = `
   .jev-btn-group {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     flex-shrink: 0;
   }
   .jev-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: var(--jev-btn-size);
+    height: var(--jev-btn-size);
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: 9999px;
     background: transparent;
     color: #52525b;
     cursor: pointer;
     transition: all 0.12s ease;
     padding: 0;
+  }
+  .jev-btn svg {
+    width: var(--jev-btn-icon);
+    height: var(--jev-btn-icon);
   }
   .jev-btn:hover:not(:disabled) {
     background: #f4f4f5;
@@ -149,7 +215,7 @@ const BAR_STYLES = `
     border-color: #e4e4e7;
   }
   .jev-btn:active:not(:disabled) {
-    transform: scale(0.94);
+    transform: scale(0.92);
   }
   .jev-btn:disabled {
     opacity: 0.25;
@@ -166,19 +232,19 @@ const BAR_STYLES = `
     border-color: #e4e4e7;
   }
   .jev-status-wrap {
-    font-size: 11px;
+    font-size: var(--jev-status-size);
     color: #71717a;
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     flex-shrink: 0;
   }
   .jev-status:empty {
     display: none;
   }
   .jev-status {
-    max-width: 180px;
+    max-width: var(--jev-status-max-w);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -200,8 +266,8 @@ const BAR_STYLES = `
   }
   .jev-spinner {
     display: none;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border: 2px solid #e4e4e7;
     border-top-color: #09090b;
     border-radius: 50%;
@@ -243,11 +309,13 @@ export function describeVerdict(
 export function mountFindBar(
   document: Document,
   callbacks: FindBarCallbacks,
+  size: FindBarFontSize = "medium",
 ): {
   readonly host: HTMLElement;
   readonly setStatus: (status: FindBarStatus) => void;
   readonly setCounts: (counts: FindBarCounts) => void;
   readonly setSearching: (searching: boolean) => void;
+  readonly setSize: (size: FindBarFontSize) => void;
   readonly focus: () => void;
   readonly remove: () => void;
   readonly query: () => string;
@@ -256,12 +324,39 @@ export function mountFindBar(
   const host = document.createElement("div");
   host.id = "jev-find-bar";
   host.setAttribute("data-jev-ui", "true");
+  host.setAttribute("data-size", size);
   document.documentElement.appendChild(host);
 
   const shadow = host.attachShadow({ mode: "closed" });
 
+  let fontFaceCss = "";
+  try {
+    if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+      const sansUrl = chrome.runtime.getURL("fonts/geist-sans/Geist-Variable.woff2");
+      const monoUrl = chrome.runtime.getURL("fonts/geist-mono/GeistMono-Variable.woff2");
+      fontFaceCss = `
+        @font-face {
+          font-family: "Geist";
+          src: url("${sansUrl}") format("woff2");
+          font-weight: 100 900;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: "Geist Mono";
+          src: url("${monoUrl}") format("woff2");
+          font-weight: 100 900;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+    }
+  } catch {
+    // Graceful fallback to system chain
+  }
+
   const style = document.createElement("style");
-  style.textContent = BAR_STYLES;
+  style.textContent = fontFaceCss + BAR_STYLES;
   shadow.appendChild(style);
 
   const bar = document.createElement("div");
@@ -385,6 +480,9 @@ export function mountFindBar(
     },
     setSearching: (searching: boolean) => {
       bar.setAttribute("data-searching", searching ? "true" : "false");
+    },
+    setSize: (nextSize: FindBarFontSize) => {
+      host.setAttribute("data-size", nextSize);
     },
     setStatus: (nextStatus: FindBarStatus) => {
       status.textContent = nextStatus.text;

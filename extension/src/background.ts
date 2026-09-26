@@ -10,22 +10,26 @@
 import { mergeSettings } from "../shared/settings.ts";
 import type { WorkerRequest } from "./worker-client.ts";
 
-async function proxyBase(): Promise<string> {
+async function proxySettings(): Promise<{ proxyUrl: string; proxyToken: string }> {
   const stored = await chrome.storage.local.get("jev:settings");
-  return mergeSettings(stored["jev:settings"]).proxyUrl;
+  const settings = mergeSettings(stored["jev:settings"]);
+  return { proxyUrl: settings.proxyUrl, proxyToken: settings.proxyToken };
 }
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
+async function postJson<T>(url: string, body: unknown, token: string): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: token === "" ? { "content-type": "application/json" } : {
+        "content-type": "application/json",
+        "x-homer-token": token,
+      },
       body: JSON.stringify(body),
     });
   } catch (cause) {
     throw new Error(
-      "could not reach the Jev proxy. Start it with `npm run dev` and check the proxy URL in the popup.",
+      "could not reach the Homer proxy. Start it with `npm run dev` and check the proxy URL in the popup.",
       { cause },
     );
   }
@@ -55,10 +59,10 @@ chrome.runtime.onMessage.addListener(
         if (count > 0) {
           chrome.action.setBadgeText({ tabId, text: String(count) });
           chrome.action.setBadgeBackgroundColor({ tabId, color: "#f43f5e" });
-          chrome.action.setTitle({ tabId, title: `Jev Copilot: ${count} ad(s) detected` });
+          chrome.action.setTitle({ tabId, title: `Homer: ${count} ad(s) detected` });
         } else {
           chrome.action.setBadgeText({ tabId, text: "" });
-          chrome.action.setTitle({ tabId, title: "Jev Copilot" });
+          chrome.action.setTitle({ tabId, title: "Homer" });
         }
       }
       sendResponse({ ok: true });
@@ -73,9 +77,11 @@ chrome.runtime.onMessage.addListener(
 
     void (async () => {
       try {
+        const { proxyUrl, proxyToken } = await proxySettings();
         const payload = await postJson<{ verdicts?: { action: string }[] }>(
-          `${await proxyBase()}${path}`,
+          `${proxyUrl}${path}`,
           request,
+          proxyToken,
         );
         const tabId = sender.tab?.id;
         if (typeof tabId === "number" && Array.isArray(payload.verdicts)) {
@@ -85,7 +91,7 @@ chrome.runtime.onMessage.addListener(
           if (ads > 0) {
             chrome.action.setBadgeText({ tabId, text: String(ads) });
             chrome.action.setBadgeBackgroundColor({ tabId, color: "#f43f5e" });
-            chrome.action.setTitle({ tabId, title: `Jev Copilot: ${ads} ad(s) detected` });
+            chrome.action.setTitle({ tabId, title: `Homer: ${ads} ad(s) detected` });
           }
         }
         sendResponse({ ok: true, payload });

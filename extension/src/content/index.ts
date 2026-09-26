@@ -100,6 +100,7 @@ function finderInstance(): SemanticFinder | null {
   if (!settings.enabled || !settings.semanticFind.enabled) return null;
   if (finder === null) {
     finder = new SemanticFinder(document, settings.semanticFind.debounceMs, {
+      fontSize: settings.semanticFind.fontSize,
       onUsage: (usage) => {
         sessionUsage = addUsage(sessionUsage, usage);
       },
@@ -206,6 +207,8 @@ async function boot(): Promise<void> {
       // A settings change that flips the extension off closes the bar and forgets nothing else.
       if (!settings.enabled && finder !== null) {
         finder.close();
+      } else if (finder !== null) {
+        finder.setFontSize(settings.semanticFind.fontSize);
       }
     });
   });

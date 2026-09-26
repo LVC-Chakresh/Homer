@@ -1,5 +1,5 @@
 (() => {
-  // extension/shared/wire.ts
+  // shared/wire.ts
   function emptyUsage() {
     return {
       inputTokens: 0,
@@ -22,7 +22,7 @@
   }
   var AD_CATEGORIES = ["overlay", "sponsored", "adslot"];
 
-  // extension/shared/settings.ts
+  // shared/settings.ts
   var SETTINGS_KEY = "jev:settings";
   var DEFAULT_PROXY_URL = "https://homer-3rx8.onrender.com";
   var DEFAULT_SETTINGS = {
@@ -36,9 +36,11 @@
     semanticFind: {
       enabled: true,
       takeOverCtrlF: true,
-      debounceMs: 300
+      debounceMs: 300,
+      fontSize: "medium"
     },
     proxyUrl: DEFAULT_PROXY_URL,
+    proxyToken: "",
     neverSendHosts: [],
     nativeFindHosts: ["docs.google.com", "notion.so", "vscode.dev", "github.dev"]
   };
@@ -50,6 +52,7 @@
     if (typeof src.proxyUrl === "string" && src.proxyUrl.trim() !== "") {
       base.proxyUrl = src.proxyUrl.trim().replace(/\/+$/, "");
     }
+    if (typeof src.proxyToken === "string") base.proxyToken = src.proxyToken.trim();
     if (Array.isArray(src.neverSendHosts)) base.neverSendHosts = src.neverSendHosts.map(String);
     if (Array.isArray(src.nativeFindHosts)) base.nativeFindHosts = src.nativeFindHosts.map(String);
     const ads = src.adBlocking;
@@ -75,6 +78,9 @@
       if (typeof find.debounceMs === "number" && Number.isFinite(find.debounceMs)) {
         base.semanticFind.debounceMs = Math.min(2e3, Math.max(0, find.debounceMs));
       }
+      if (find.fontSize === "default" || find.fontSize === "medium" || find.fontSize === "large") {
+        base.semanticFind.fontSize = find.fontSize;
+      }
     }
     return base;
   }
@@ -94,7 +100,7 @@
     }
   }
 
-  // extension/src/heuristics.ts
+  // src/heuristics.ts
   var BLOCK_RULES = {
     /** Below this, a block is a label or a fragment and not worth a question option. */
     minWords: 4,
@@ -149,7 +155,7 @@
     return spans;
   }
 
-  // extension/src/dom.ts
+  // src/dom.ts
   var DEFAULT_STYLE = {
     position: "static",
     zIndex: "auto",
@@ -335,7 +341,7 @@
     return range;
   }
 
-  // extension/src/content/highlight.ts
+  // src/content/highlight.ts
   var HIGHLIGHT_STRONG = "jev-hit-strong";
   var HIGHLIGHT_LOOSE = "jev-hit-loose";
   var HIGHLIGHT_ACTIVE = "jev-hit-active";
@@ -482,7 +488,7 @@
     }
   };
 
-  // extension/src/content/findbar.ts
+  // src/content/findbar.ts
   var BAR_STYLES = `
   :host {
     all: initial;
@@ -490,27 +496,75 @@
     top: 20px;
     right: 24px;
     z-index: 2147483647;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Text", Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
+    font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
     color: #09090b;
     user-select: none;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Base / default size scale */
+    --jev-bar-height: 44px;
+    --jev-bar-min-w: 480px;
+    --jev-bar-pad-x: 14px;
+    --jev-input-size: 14.5px;
+    --jev-brand-size: 13.5px;
+    --jev-brand-icon: 22px;
+    --jev-count-size: 12px;
+    --jev-btn-size: 28px;
+    --jev-btn-icon: 13px;
+    --jev-status-size: 12px;
+    --jev-status-max-w: 220px;
   }
+
+  /* Medium scale: comfortable reading size */
+  :host([data-size="medium"]) {
+    --jev-bar-height: 48px;
+    --jev-bar-min-w: 520px;
+    --jev-bar-pad-x: 16px;
+    --jev-input-size: 15.5px;
+    --jev-brand-size: 14.5px;
+    --jev-brand-icon: 24px;
+    --jev-count-size: 12.5px;
+    --jev-btn-size: 30px;
+    --jev-btn-icon: 14px;
+    --jev-status-size: 12.5px;
+    --jev-status-max-w: 240px;
+  }
+
+  /* Large scale: highly legible display */
+  :host([data-size="large"]) {
+    --jev-bar-height: 52px;
+    --jev-bar-min-w: 580px;
+    --jev-bar-pad-x: 18px;
+    --jev-input-size: 17px;
+    --jev-brand-size: 15.5px;
+    --jev-brand-icon: 26px;
+    --jev-count-size: 13.5px;
+    --jev-btn-size: 32px;
+    --jev-btn-icon: 15px;
+    --jev-status-size: 13.5px;
+    --jev-status-max-w: 280px;
+  }
+
   .jev-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: #ffffff;
     border: 1px solid #e4e4e7;
-    border-radius: 12px;
-    padding: 0 8px 0 14px;
-    box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
-    min-width: 440px;
-    max-width: 680px;
-    height: 44px;
+    border-radius: 9999px;
+    padding: 0 10px 0 var(--jev-bar-pad-x);
+    box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.04);
+    min-width: var(--jev-bar-min-w);
+    max-width: 780px;
+    height: var(--jev-bar-height);
     box-sizing: border-box;
-    animation: jev-slide-down 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: jev-slide-down 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, height 0.15s ease;
+  }
+  .jev-bar:focus-within {
+    border-color: #18181b;
+    box-shadow: 0 8px 30px -2px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   @keyframes jev-slide-down {
     from { opacity: 0; transform: translateY(-8px) scale(0.98); }
@@ -519,47 +573,60 @@
   .jev-brand {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 7px;
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: var(--jev-brand-size);
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     color: #09090b;
-    padding-right: 8px;
+    padding-right: 10px;
     border-right: 1px solid #e4e4e7;
     flex-shrink: 0;
+    line-height: 1;
   }
   .jev-icon {
     display: inline-flex;
     align-items: center;
-    color: #09090b;
+    justify-content: center;
+    width: var(--jev-brand-icon);
+    height: var(--jev-brand-icon);
+    border-radius: 6px;
+    background: #09090b;
+    color: #ffffff;
+  }
+  .jev-icon svg {
+    width: calc(var(--jev-brand-icon) * 0.58);
+    height: calc(var(--jev-brand-icon) * 0.58);
   }
   .jev-input {
     flex: 1;
-    min-width: 150px;
+    min-width: 170px;
     height: 100%;
     border: none;
     border-radius: 0;
     padding: 0 4px;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--jev-input-size);
     background: transparent;
     color: #09090b;
     outline: none;
+    letter-spacing: -0.01em;
   }
   .jev-input::placeholder {
     color: #a1a1aa;
   }
   .jev-count {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 11px;
+    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: var(--jev-count-size);
     font-weight: 500;
     color: #52525b;
     white-space: nowrap;
-    padding: 2px 8px;
+    padding: 3px 9px;
     background: #f4f4f5;
     border: 1px solid #e4e4e7;
-    border-radius: 6px;
+    border-radius: 9999px;
     flex-shrink: 0;
+    letter-spacing: -0.01em;
   }
   .jev-count:empty {
     display: none;
@@ -573,22 +640,26 @@
   .jev-btn-group {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     flex-shrink: 0;
   }
   .jev-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: var(--jev-btn-size);
+    height: var(--jev-btn-size);
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: 9999px;
     background: transparent;
     color: #52525b;
     cursor: pointer;
     transition: all 0.12s ease;
     padding: 0;
+  }
+  .jev-btn svg {
+    width: var(--jev-btn-icon);
+    height: var(--jev-btn-icon);
   }
   .jev-btn:hover:not(:disabled) {
     background: #f4f4f5;
@@ -596,7 +667,7 @@
     border-color: #e4e4e7;
   }
   .jev-btn:active:not(:disabled) {
-    transform: scale(0.94);
+    transform: scale(0.92);
   }
   .jev-btn:disabled {
     opacity: 0.25;
@@ -613,19 +684,19 @@
     border-color: #e4e4e7;
   }
   .jev-status-wrap {
-    font-size: 11px;
+    font-size: var(--jev-status-size);
     color: #71717a;
     white-space: nowrap;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     flex-shrink: 0;
   }
   .jev-status:empty {
     display: none;
   }
   .jev-status {
-    max-width: 180px;
+    max-width: var(--jev-status-max-w);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -647,8 +718,8 @@
   }
   .jev-spinner {
     display: none;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border: 2px solid #e4e4e7;
     border-top-color: #09090b;
     border-radius: 50%;
@@ -677,14 +748,39 @@
     if (verdict === "partial") return "partially addressed";
     return "no answer on this page";
   }
-  function mountFindBar(document2, callbacks) {
+  function mountFindBar(document2, callbacks, size = "medium") {
     const host = document2.createElement("div");
     host.id = "jev-find-bar";
     host.setAttribute("data-jev-ui", "true");
+    host.setAttribute("data-size", size);
     document2.documentElement.appendChild(host);
     const shadow = host.attachShadow({ mode: "closed" });
+    let fontFaceCss = "";
+    try {
+      if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+        const sansUrl = chrome.runtime.getURL("fonts/geist-sans/Geist-Variable.woff2");
+        const monoUrl = chrome.runtime.getURL("fonts/geist-mono/GeistMono-Variable.woff2");
+        fontFaceCss = `
+        @font-face {
+          font-family: "Geist";
+          src: url("${sansUrl}") format("woff2");
+          font-weight: 100 900;
+          font-style: normal;
+          font-display: swap;
+        }
+        @font-face {
+          font-family: "Geist Mono";
+          src: url("${monoUrl}") format("woff2");
+          font-weight: 100 900;
+          font-style: normal;
+          font-display: swap;
+        }
+      `;
+      }
+    } catch {
+    }
     const style = document2.createElement("style");
-    style.textContent = BAR_STYLES;
+    style.textContent = fontFaceCss + BAR_STYLES;
     shadow.appendChild(style);
     const bar = document2.createElement("div");
     bar.className = "jev-bar";
@@ -791,6 +887,9 @@
       setSearching: (searching) => {
         bar.setAttribute("data-searching", searching ? "true" : "false");
       },
+      setSize: (nextSize) => {
+        host.setAttribute("data-size", nextSize);
+      },
       setStatus: (nextStatus) => {
         status.textContent = nextStatus.text;
         status.title = nextStatus.text;
@@ -810,23 +909,38 @@
     };
   }
 
-  // extension/src/worker-client.ts
+  // src/worker-client.ts
   function isEnvelope(value) {
     return typeof value === "object" && value !== null && "ok" in value;
+  }
+  var WORKER_WAKE_RETRIES = 2;
+  var WORKER_WAKE_BACKOFF_MS = 120;
+  var delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  function isWorkerAsleep(message) {
+    return message.includes("Could not establish connection") || message.includes("Receiving end does not exist") || message.includes("message port closed");
   }
   async function sendWorkerMessage(message) {
     if (typeof chrome !== "undefined" && !chrome.runtime?.id) {
       throw new Error("Extension reloaded. Please refresh this page (Ctrl+R).");
     }
-    try {
-      return await chrome.runtime.sendMessage(message);
-    } catch (cause) {
-      const msg = cause instanceof Error ? cause.message : String(cause);
-      if (msg.includes("Extension context invalidated") || typeof chrome !== "undefined" && !chrome.runtime?.id) {
-        throw new Error("Extension reloaded. Please refresh this page (Ctrl+R).");
+    const lastError = [];
+    for (let attempt = 0; attempt <= WORKER_WAKE_RETRIES; attempt += 1) {
+      if (attempt > 0) await delay(WORKER_WAKE_BACKOFF_MS * attempt);
+      try {
+        return await chrome.runtime.sendMessage(message);
+      } catch (cause) {
+        const msg = cause instanceof Error ? cause.message : String(cause);
+        if (msg.includes("Extension context invalidated") || typeof chrome !== "undefined" && !chrome.runtime?.id) {
+          throw new Error("Extension reloaded. Please refresh this page (Ctrl+R).");
+        }
+        if (!isWorkerAsleep(msg)) throw cause;
+        lastError.push(cause);
       }
-      throw cause;
     }
+    throw new Error(
+      "the extension background did not wake up. Reload it in chrome://extensions, then refresh this page.",
+      { cause: lastError[lastError.length - 1] }
+    );
   }
   async function searchViaWorker(message) {
     const raw = await sendWorkerMessage(message);
@@ -840,7 +954,7 @@
     return raw.payload;
   }
 
-  // extension/src/content/search.ts
+  // src/content/search.ts
   var MIN_REEXTRACTION_GAP_MS = 800;
   function partitionAnswer(hits) {
     const answerIndex = hits.findIndex((hit) => hit.tier === "strong");
@@ -896,6 +1010,7 @@
     #lastSearchedQuery = null;
     #document;
     #debounceMs;
+    #fontSize;
     /** Called with every search's usage so the tab can account for the session. */
     onUsage;
     /** Called with the query each search actually answers, for the popup's record. */
@@ -903,8 +1018,13 @@
     constructor(document2, debounceMs, callbacks = {}) {
       this.#document = document2;
       this.#debounceMs = Math.max(0, Math.min(2e3, debounceMs));
+      this.#fontSize = callbacks.fontSize ?? "medium";
       this.onUsage = callbacks.onUsage ?? (() => void 0);
       this.onQuery = callbacks.onQuery ?? (() => void 0);
+    }
+    setFontSize(size) {
+      this.#fontSize = size;
+      this.#bar?.setSize(size);
     }
     get isOpen() {
       return this.#bar !== null;
@@ -915,7 +1035,11 @@
       this.#current = 0;
       this.#blocks = [];
       this.#lastExtraction = 0;
-      this.#bar = mountFindBar(this.#document, { onIntent: (intent) => this.#onIntent(intent) });
+      this.#bar = mountFindBar(
+        this.#document,
+        { onIntent: (intent) => this.#onIntent(intent) },
+        this.#fontSize
+      );
       if (preset !== "") this.#bar.preset(preset);
       this.#bar.focus();
       this.#bar.setCounts({ answer: 0, context: 0, current: 0 });
@@ -961,7 +1085,7 @@
     #schedule(text) {
       if (this.#debounceTimer !== null) clearTimeout(this.#debounceTimer);
       if (text.trim() === "") {
-        this.#clearResults("Semantic find \xB7 powered by Jev");
+        this.#clearResults("Semantic find \xB7 powered by Homer");
         return;
       }
       this.#debounceTimer = setTimeout(() => {
@@ -976,7 +1100,7 @@
       }
       const trimmed = query.trim();
       if (trimmed === "") {
-        this.#clearResults("Semantic find \xB7 powered by Jev");
+        this.#clearResults("Semantic find \xB7 powered by Homer");
         return;
       }
       if (trimmed === this.#lastSearchedQuery && this.#matches.length > 0) {
@@ -991,7 +1115,7 @@
       if (bar === null) return;
       const trimmed = query.trim();
       if (trimmed === "") {
-        this.#clearResults("Semantic find \xB7 powered by Jev");
+        this.#clearResults("Semantic find \xB7 powered by Homer");
         return;
       }
       const now = Date.now();
@@ -1007,7 +1131,7 @@
       this.#clearPaint();
       const generation = this.#generation += 1;
       bar.setSearching(true);
-      bar.setStatus({ text: "Asking Jev\u2026", tone: "info" });
+      bar.setStatus({ text: "Asking Homer\u2026", tone: "info" });
       let response;
       try {
         response = await searchViaWorker({
@@ -1124,7 +1248,7 @@
     }
   };
 
-  // extension/src/content/index.ts
+  // src/content/index.ts
   var settings = DEFAULT_SETTINGS;
   var finder = null;
   var settingsReady = false;
@@ -1182,6 +1306,7 @@
     if (!settings.enabled || !settings.semanticFind.enabled) return null;
     if (finder === null) {
       finder = new SemanticFinder(document, settings.semanticFind.debounceMs, {
+        fontSize: settings.semanticFind.fontSize,
         onUsage: (usage) => {
           sessionUsage = addUsage(sessionUsage, usage);
         },
@@ -1265,6 +1390,8 @@
         settings = next;
         if (!settings.enabled && finder !== null) {
           finder.close();
+        } else if (finder !== null) {
+          finder.setFontSize(settings.semanticFind.fontSize);
         }
       });
     });

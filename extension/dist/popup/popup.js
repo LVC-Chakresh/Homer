@@ -1,8 +1,8 @@
 (() => {
-  // extension/shared/wire.ts
+  // shared/wire.ts
   var AD_CATEGORIES = ["overlay", "sponsored", "adslot"];
 
-  // extension/shared/settings.ts
+  // shared/settings.ts
   var SETTINGS_KEY = "jev:settings";
   var DEFAULT_PROXY_URL = "https://homer-3rx8.onrender.com";
   var DEFAULT_SETTINGS = {
@@ -16,9 +16,11 @@
     semanticFind: {
       enabled: true,
       takeOverCtrlF: true,
-      debounceMs: 300
+      debounceMs: 300,
+      fontSize: "medium"
     },
     proxyUrl: DEFAULT_PROXY_URL,
+    proxyToken: "",
     neverSendHosts: [],
     nativeFindHosts: ["docs.google.com", "notion.so", "vscode.dev", "github.dev"]
   };
@@ -30,6 +32,7 @@
     if (typeof src.proxyUrl === "string" && src.proxyUrl.trim() !== "") {
       base.proxyUrl = src.proxyUrl.trim().replace(/\/+$/, "");
     }
+    if (typeof src.proxyToken === "string") base.proxyToken = src.proxyToken.trim();
     if (Array.isArray(src.neverSendHosts)) base.neverSendHosts = src.neverSendHosts.map(String);
     if (Array.isArray(src.nativeFindHosts)) base.nativeFindHosts = src.nativeFindHosts.map(String);
     const ads = src.adBlocking;
@@ -55,18 +58,21 @@
       if (typeof find.debounceMs === "number" && Number.isFinite(find.debounceMs)) {
         base.semanticFind.debounceMs = Math.min(2e3, Math.max(0, find.debounceMs));
       }
+      if (find.fontSize === "default" || find.fontSize === "medium" || find.fontSize === "large") {
+        base.semanticFind.fontSize = find.fontSize;
+      }
     }
     return base;
   }
 
-  // extension/src/content/format.ts
+  // src/content/format.ts
   function formatCost(usd) {
     if (!Number.isFinite(usd) || usd <= 0) return "$0.00";
     if (usd < 0.01) return `$${usd.toFixed(5)}`;
     return `$${usd.toFixed(2)}`;
   }
 
-  // extension/src/popup/popup.ts
+  // src/popup/popup.ts
   var $ = (id) => {
     const element = document.getElementById(id);
     if (element === null) throw new Error(`popup is missing #${id}`);
@@ -84,6 +90,7 @@
   var debounceInput = $("debounce");
   var debounceVal = $("debounce-val");
   var proxyUrlInput = $("proxy-url");
+  var proxyTokenInput = $("proxy-token");
   var neverSendInput = $("never-send");
   var nativeFindInput = $("native-find");
   var telemetryInfo = $("telemetry-info");
@@ -204,6 +211,7 @@
     debounceInput.value = String(settings.semanticFind.debounceMs);
     debounceVal.textContent = `${settings.semanticFind.debounceMs} ms`;
     proxyUrlInput.value = settings.proxyUrl;
+    proxyTokenInput.value = settings.proxyToken;
     neverSendInput.value = settings.neverSendHosts.join("\n");
     nativeFindInput.value = settings.nativeFindHosts.join("\n");
     findEnabledInput.addEventListener("change", () => {
@@ -239,9 +247,40 @@
         }
       }));
     });
+    const sizeGroup = document.getElementById("size-segmented-group");
+    const sizeBtns = sizeGroup?.querySelectorAll(".size-btn") ?? [];
+    const updateSizeUi = (currentSize) => {
+      for (const btn of sizeBtns) {
+        if (btn.dataset["size"] === currentSize) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      }
+    };
+    updateSizeUi(settings.semanticFind.fontSize);
+    for (const btn of sizeBtns) {
+      btn.addEventListener("click", () => {
+        const chosen = btn.dataset["size"] ?? "medium";
+        updateSizeUi(chosen);
+        void saveSettings((prev) => ({
+          ...prev,
+          semanticFind: {
+            ...prev.semanticFind,
+            fontSize: chosen
+          }
+        }));
+      });
+    }
     proxyUrlInput.addEventListener("change", () => {
       const nextUrl = proxyUrlInput.value.trim() || DEFAULT_SETTINGS.proxyUrl;
       void saveSettings({ proxyUrl: nextUrl }).then((updated) => {
+        void checkProxyHealth(updated);
+      });
+    });
+    proxyTokenInput.addEventListener("change", () => {
+      const nextToken = proxyTokenInput.value.trim();
+      void saveSettings({ proxyToken: nextToken }).then((updated) => {
         void checkProxyHealth(updated);
       });
     });

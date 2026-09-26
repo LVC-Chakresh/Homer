@@ -12,12 +12,15 @@
       <header class="header">
         <div class="brand">
           <div class="logo-mark">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 4v16M19 4v16M5 12h14" />
             </svg>
           </div>
           <div class="brand-info">
-            <span class="brand-title">Homer</span>
+            <div class="brand-line">
+              <span class="brand-title">Homer</span>
+              <span class="brand-pill">semantic</span>
+            </div>
             <div class="proxy-badge" id="proxy-status">
               <span class="status-dot"></span>
               <span class="status-text">Connecting...</span>
@@ -25,8 +28,8 @@
           </div>
         </div>
 
-        <a href="http://127.0.0.1:8787/" target="_blank" class="icon-link" title="Open Web Dashboard & Playground">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <a href="http://127.0.0.1:8787/" target="_blank" class="icon-link" title="Open Proxy Playground">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
             <polyline points="15 3 21 3 21 9"></polyline>
             <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -38,7 +41,7 @@
       <section class="hero-card">
         <button id="btn-open-find" class="btn btn-hero">
           <span class="btn-hero-content">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
@@ -52,12 +55,12 @@
         </div>
       </section>
 
-      <!-- Core Preferences -->
+      <!-- Core Preferences Card -->
       <section class="section-card">
         <div class="setting-row">
           <div class="setting-info">
             <label for="find-enabled" class="setting-label">Semantic Find</label>
-            <span class="setting-sub">Enable conceptual search on pages</span>
+            <span class="setting-sub">Conceptual search on web pages</span>
           </div>
           <label class="switch">
             <input type="checkbox" id="find-enabled" />
@@ -80,6 +83,20 @@
 
         <div class="divider"></div>
 
+        <div class="setting-row">
+          <div class="setting-info">
+            <label class="setting-label">Finder Text Size</label>
+            <span class="setting-sub">Scale find bar and text</span>
+          </div>
+          <div class="size-segmented-group" id="size-segmented-group" role="group" aria-label="Finder Text Size">
+            <button type="button" class="size-btn" data-size="default">Small</button>
+            <button type="button" class="size-btn active" data-size="medium">Medium</button>
+            <button type="button" class="size-btn" data-size="large">Large</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="slider-group">
           <div class="slider-header">
             <label for="debounce" class="setting-label">Debounce Sensitivity</label>
@@ -92,7 +109,7 @@
       <!-- Advanced Settings Accordion -->
       <details class="advanced-details" id="advanced-details">
         <summary class="advanced-summary">
-          <span>Advanced Configuration</span>
+          <span class="summary-label">Advanced Configuration</span>
           <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -101,6 +118,11 @@
           <div class="input-group">
             <label for="proxy-url" class="field-label">Proxy Service URL</label>
             <input type="text" id="proxy-url" spellcheck="false" class="text-input" placeholder="https://homer-3rx8.onrender.com" />
+          </div>
+
+          <div class="input-group">
+            <label for="proxy-token" class="field-label">Proxy Token <span class="field-sub">(only if your proxy requires one)</span></label>
+            <input type="password" id="proxy-token" spellcheck="false" class="text-input" placeholder="leave empty for a local proxy" />
           </div>
 
           <div class="input-group">
