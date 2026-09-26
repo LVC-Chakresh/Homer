@@ -1,9 +1,11 @@
 /**
- * Entrypoint. Loopback only.
+ * Entrypoint.
  *
- * The bind address is not configurable on purpose: this process holds an API key and
- * accepts page content, so exposing it on a routable interface would turn a local dev
- * tool into an open relay with someone else's credential behind it.
+ * Bind address: this process holds an API key and accepts page text, so the local default is
+ * loopback. A deployed container is the opposite case — a server bound to loopback is simply
+ * unreachable, and the platform's port scan fails. So the default follows the environment and
+ * `HOST` is an explicit override, rather than being inferred from whether some other variable
+ * happened to be set.
  */
 
 import { createJudge } from "./model.ts";
@@ -16,7 +18,15 @@ if (!Number.isInteger(port) || port <= 0 || port > 65535) {
   process.exit(1);
 }
 
-const host = process.env["HOST"] ?? (process.env["RENDER"] || process.env["PORT"] ? "0.0.0.0" : "127.0.0.1");
+// A container is detected by the platform's own marker, or by NODE_ENV=production, which the
+// Dockerfile sets. Both mean "reachable", so both get 0.0.0.0. Local dev stays on loopback.
+const inContainer =
+  process.env["RENDER"] === "1" ||
+  process.env["RENDER"] === "true" ||
+  process.env["NODE_ENV"] === "production" ||
+  process.env["DYNO"] !== undefined;
+
+const host = process.env["HOST"]?.trim() || (inContainer ? "0.0.0.0" : "127.0.0.1");
 
 const { judge, reason } = createJudge();
 const service = new JevService({ judge, judgeReason: reason });

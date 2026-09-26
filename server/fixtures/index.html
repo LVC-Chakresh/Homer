@@ -546,7 +546,7 @@ The Library of Congress is the research library that officially serves the Unite
           const stats = await statsRes.json();
           document.getElementById('stat-searches').textContent = (stats.searches || 0).toLocaleString();
           document.getElementById('stat-cost').textContent = '$' + (stats.totals?.costUsd || 0).toFixed(4);
-          document.getElementById('stat-cache').textContent = `${stats.totals?.requests || 0} requests, ${stats.cacheEntries || 0} cached`;
+          document.getElementById('stat-cache').textContent = `${stats.totals?.upstreamRequests || 0} requests, ${stats.cacheEntries || 0} cached`;
         } catch {
           document.getElementById('health-mode').textContent = 'OFFLINE';
           document.getElementById('stat-reason').textContent = 'Could not reach /v1/health';
@@ -581,9 +581,9 @@ The Library of Congress is the research library that officially serves the Unite
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-              url: window.location.href,
+              pageUrl: window.location.href,
               query,
-              passages: blocks
+              blocks
             })
           });
 
@@ -619,14 +619,17 @@ The Library of Congress is the research library that officially serves the Unite
           html += '<div class="empty-state" style="margin: 2rem auto;">No matching passages above confidence floor.</div>';
         } else {
           hits.forEach((hit, idx) => {
-            const tierClass = hit.tier === 'answer' ? 'answer-tier' : 'context-tier';
-            const tierLabel = hit.tier === 'answer' ? 'Primary Answer' : 'Supporting Context';
-            const text = blockMap.get(hit.blockId) || hit.blockId;
+            // The wire sends `tier` as strong|loose and scores as `relevance`, keyed by `id`.
+            const isAnswer = hit.tier === 'strong';
+            const tierClass = isAnswer ? 'answer-tier' : 'context-tier';
+            const tierLabel = isAnswer ? 'Primary Answer' : 'Supporting Context';
+            const text = blockMap.get(hit.id) || hit.id;
+            const score = typeof hit.relevance === 'number' ? hit.relevance : 0;
             html += `
               <div class="result-item ${tierClass}">
                 <div class="result-meta">
                   <span>#${idx + 1} ${tierLabel}</span>
-                  <span>Confidence: ${(hit.score * 100).toFixed(1)}%</span>
+                  <span>Confidence: ${(score * 100).toFixed(1)}%</span>
                 </div>
                 <div class="result-text">${escapeHtml(text)}</div>
               </div>

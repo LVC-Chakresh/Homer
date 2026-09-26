@@ -4,10 +4,13 @@ services:
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /v1/health
+    # The route is /health. There is no /v1/health, so pointing the check there fails forever.
+    healthCheckPath: /health
     envVars:
       - key: TYPESAFE_API_KEY
         sync: false
+      - key: PORT
+        value: 10000
       - key: HOST
         value: 0.0.0.0
       - key: JEV_FAKE
